@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>고등학교 수학 동아리 패들렛 & 아카이브</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            900: '#1e3a8a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- KaTeX CSS & JS (수학 공식 렌더링) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+
+    <!-- SheetJS (엑셀 내보내기) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <!-- Custom Style & Math Pattern Background -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+        
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f8fafc;
+            background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+
+        .math-symbol-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0.03;
+            z-index: 0;
+            font-family: 'Times New Roman', serif;
+            font-style: italic;
+            font-size: 1.5rem;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .katex-display {
+            margin: 0.5em 0 !important;
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding: 4px 0;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        .post-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .post-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.12);
+        }
+    </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col relative pb-12">
+
+    <!-- Math Graphic Background Floating Icons -->
+    <div class="math-symbol-bg flex flex-wrap justify-between p-10 gap-16 select-none">
+        <span>∫ f(x)dx</span> <span>∑ (n=1 to ∞)</span> <span>lim (x→0)</span> <span>e<sup>iπ</sup> + 1 = 0</span>
+        <span>f'(x)</span> <span>∇ × F</span> <span>P(A|B)</span> <span>√x² + y²</span>
+        <span>A = πr²</span> <span>d/dx (sin x)</span> <span>Matrix [a b; c d]</span>
+        <span>∫ f(x)dx</span> <span>∑ (n=1 to ∞)</span> <span>lim (x→0)</span> <span>e<sup>iπ</sup> + 1 = 0</span>
+    </div>
+
+    <!-- Header Section -->
+    <header class="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <!-- Logo & Title -->
+            <div class="flex items-center space-x-3">
+                <div class="bg-gradient-to-tr from-blue-600 to-indigo-600 text-white p-2.5 rounded-xl shadow-md shadow-blue-500/20">
+                    <i class="fa-solid font-bold text-xl fa-square-root-variable"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                        <span>SIGMA</span>
+                        <span class="text-xs bg-blue-100 text-blue-700 font-medium px-2 py-0.5 rounded-full">고교 수학 동아리</span>
+                    </h1>
+                    <p class="text-xs text-slate-500">수학 탐구 및 활동 아카이빙 패들렛</p>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex items-center space-x-2.5 w-full sm:w-auto justify-end">
+                <!-- Clear Data Button -->
+                <button id="clearDataBtn" onclick="clearAllData()" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 text-slate-600 hover:bg-rose-50 hover:text-rose-600 border border-slate-200 text-xs font-medium transition-colors" title="모든 데이터 삭제">
+                    <i class="fa-solid fa-rotate-left"></i>
+                    <span>초기화</span>
+                </button>
+
+                <!-- Excel Export Button -->
+                <button id="exportExcelBtn" onclick="exportToExcel()" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 text-sm font-medium transition-colors">
+                    <i class="fa-solid fa-file-excel text-emerald-600"></i>
+                    <span>엑셀 내보내기</span>
+                </button>
+
+                <!-- New Post Button -->
+                <button onclick="openPostModal()" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 text-sm font-medium shadow-md shadow-blue-500/20 transition-all hover:scale-[1.02]">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>새 주제/활동 올리기</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full z-10">
+        
+        <!-- Controls Bar: Category Filters & Search Bar -->
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80 mb-6 flex flex-col md:flex-row gap-4 items-center justify-between">
+            
+            <!-- Filter Pills -->
+            <div class="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto custom-scrollbar pb-1 md:pb-0" id="categoryFilters">
+                <!-- Javascript will inject categories here -->
+            </div>
+
+            <!-- Search Box -->
+            <div class="relative w-full md:w-64 shrink-0">
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                <input type="text" id="searchInput" placeholder="주제, 작성자, 내용 검색..." oninput="handleSearch()"
+                    class="w-full pl-9 pr-4 py-1.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+            </div>
+        </div>
+
+        <!-- Dashboard Stats Strip -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+            <div class="bg-white p-3.5 rounded-xl border border-slate-200/80 flex items-center gap-3">
+                <div class="p-2.5 bg-blue-50 text-blue-600 rounded-lg"><i class="fa-solid fa-cubes text-base"></i></div>
+                <div>
+                    <div class="text-xs text-slate-500">전체 포스트</div>
+                    <div class="text-lg font-bold text-slate-800" id="statTotalPosts">0</div>
+                </div>
+            </div>
+            <div class="bg-white p-3.5 rounded-xl border border-slate-200/80 flex items-center gap-3">
+                <div class="p-2.5 bg-purple-50 text-purple-600 rounded-lg"><i class="fa-solid fa-square-root-variable text-base"></i></div>
+                <div>
+                    <div class="text-xs text-slate-500">수학 탐구 자료</div>
+                    <div class="text-lg font-bold text-slate-800" id="statMathPosts">0</div>
+                </div>
+            </div>
+            <div class="bg-white p-3.5 rounded-xl border border-slate-200/80 flex items-center gap-3">
+                <div class="p-2.5 bg-amber-50 text-amber-600 rounded-lg"><i class="fa-solid fa-comments text-base"></i></div>
+                <div>
+                    <div class="text-xs text-slate-500">누적 소통 댓글</div>
+                    <div class="text-lg font-bold text-slate-800" id="statTotalComments">0</div>
+                </div>
+            </div>
+            <div class="bg-white p-3.5 rounded-xl border border-slate-200/80 flex items-center gap-3">
+                <div class="p-2.5 bg-rose-50 text-rose-600 rounded-lg"><i class="fa-solid fa-heart text-base"></i></div>
+                <div>
+                    <div class="text-xs text-slate-500">받은 공감</div>
+                    <div class="text-lg font-bold text-slate-800" id="statTotalLikes">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Padlet Masonry / Grid Cards Container -->
+        <div id="postsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <!-- Dynamic Post Cards will render here -->
+        </div>
+
+        <!-- Empty State View -->
+        <div id="emptyState" class="hidden flex-col items-center justify-center py-16 text-center">
+            <div class="w-16 h-16 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mb-3 text-2xl">
+                <i class="fa-solid fa-folder-open"></i>
+            </div>
+            <h3 class="text-base font-semibold text-slate-700">게시글이 없습니다</h3>
+            <p class="text-xs text-slate-500 max-w-sm mt-1">검색어를 확인하거나 동아리 첫 수학 탐구 주제/사진을 직접 업로드해 보세요!</p>
+            <button onclick="openPostModal()" class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-medium hover:bg-blue-700 transition">
+                첫 글 작성하기
+            </button>
+        </div>
+    </main>
+
+    <!-- Create/Edit Post Modal -->
+    <div id="postModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden border border-slate-100 animate-in fade-in zoom-in duration-150">
+            <!-- Modal Header -->
+            <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <h3 class="text-base font-bold text-slate-800 flex items-center gap-2" id="modalTitle">
+                    <i class="fa-solid fa-pen-to-square text-blue-600"></i>
+                    <span>새 게시글 / 수학 탐구 주제 올리기</span>
+                </h3>
+                <button onclick="closePostModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Modal Form Body -->
+            <div class="p-5 overflow-y-auto space-y-4 text-sm custom-scrollbar">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">카테고리 선택 *</label>
+                    <select id="postCategory" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none">
+                        <option value="해석학/미적분">∫ 해석학 / 미적분</option>
+                        <option value="기하/벡터">📐 기하 / 벡터</option>
+                        <option value="확률과 통계">📊 확률과 통계</option>
+                        <option value="수학사/탐구">📖 수학사 / 탐구</option>
+                        <option value="자유주제">💡 자유주제</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">작성자 이름 *</label>
+                        <input type="text" id="postAuthor" placeholder="예: 2학년 김수학" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">제목 *</label>
+                        <input type="text" id="postTitleInput" placeholder="게시글 제목" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-xs font-semibold text-slate-600">탐구 내용 및 설명 *</label>
+                        <span class="text-[11px] text-blue-600 bg-blue-50 px-2 py-0.5 rounded font-mono">KaTeX 공식 지원 ($..$, $$..$$)</span>
+                    </div>
+                    <textarea id="postContent" rows="5" placeholder="내용을 작성하세요. 수학 공식 예시: $f(x) = x^2 + 2x + 1$ 또는 $$ \int_{0}^{1} x dx $$" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none font-sans text-sm resize-none"></textarea>
+                </div>
+
+                <!-- Image Upload & Preview -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">사진 첨부 (선택)</label>
+                    <div class="flex items-center gap-3">
+                        <input type="file" id="postImageInput" accept="image/*" class="hidden" onchange="handleImageSelect(event)">
+                        <button type="button" onclick="document.getElementById('postImageInput').click()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl border border-slate-200 text-xs font-medium flex items-center gap-1.5 transition">
+                            <i class="fa-solid fa-image text-blue-600"></i>
+                            <span>이미지 파일 선택</span>
+                        </button>
+                        <span id="fileNameDisplay" class="text-xs text-slate-400 truncate max-w-[200px]">선택된 파일 없음</span>
+                    </div>
+                    <!-- Preview Box -->
+                    <div id="imagePreviewContainer" class="mt-2 relative hidden rounded-xl overflow-hidden border border-slate-200 max-h-48 bg-slate-100 flex items-center justify-center">
+                        <img id="imagePreview" src="" alt="미리보기" class="max-h-48 object-contain">
+                        <button type="button" onclick="removeSelectedImage()" class="absolute top-2 right-2 bg-slate-900/70 text-white rounded-full p-1.5 hover:bg-slate-900 transition">
+                            <i class="fa-solid fa-xmark text-xs block"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="px-5 py-3.5 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-2">
+                <button type="button" onclick="closePostModal()" class="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-xs font-medium transition">
+                    취소
+                </button>
+                <button type="button" onclick="submitPost()" class="px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 text-xs font-medium shadow-md shadow-blue-500/20 transition">
+                    게시하기
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Post Detail / Comment Modal -->
+    <div id="detailModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden border border-slate-100 animate-in fade-in zoom-in duration-150">
+            <!-- Modal Header -->
+            <div class="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <span id="detailCategory" class="px-2.5 py-1 rounded-full text-xs font-semibold">카테고리</span>
+                <div class="flex items-center gap-2">
+                    <button id="deletePostBtn" onclick="confirmDeletePost()" class="text-xs text-rose-500 hover:text-rose-700 font-medium px-2 py-1 rounded hover:bg-rose-50">
+                        <i class="fa-regular fa-trash-can mr-1"></i>삭제
+                    </button>
+                    <button onclick="closeDetailModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Modal Content Area -->
+            <div class="p-6 overflow-y-auto space-y-4 custom-scrollbar flex-1" id="detailBody">
+                <div>
+                    <h2 id="detailTitle" class="text-xl font-bold text-slate-900 leading-snug"></h2>
+                    <div class="flex items-center gap-2 mt-2 text-xs text-slate-500 border-b border-slate-100 pb-3">
+                        <span class="font-semibold text-slate-700" id="detailAuthor"></span>
+                        <span>•</span>
+                        <span id="detailDate"></span>
+                    </div>
+                </div>
+
+                <!-- Attached Image -->
+                <div id="detailImageContainer" class="hidden rounded-xl overflow-hidden border border-slate-100 bg-slate-50 max-h-80 text-center">
+                    <img id="detailImage" src="" class="max-h-80 mx-auto object-contain">
+                </div>
+
+                <!-- Post Text Body with KaTeX rendered -->
+                <div id="detailContent" class="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap font-sans"></div>
+
+                <!-- Like / React Section -->
+                <div class="pt-2 flex items-center gap-3">
+                    <button id="detailLikeBtn" onclick="toggleLikeCurrentPost()" class="px-4 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-semibold flex items-center gap-2 transition">
+                        <i class="fa-solid fa-heart text-sm"></i>
+                        <span>공감 <span id="detailLikeCount">0</span></span>
+                    </button>
+                </div>
+
+                <!-- Comments Section Header -->
+                <div class="pt-6 border-t border-slate-100">
+                    <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2 mb-3">
+                        <i class="fa-regular fa-comments text-blue-600"></i>
+                        <span>부원 의견 & 토론 댓글 (<span id="detailCommentCount">0</span>)</span>
+                    </h3>
+
+                    <!-- Comment Input Form -->
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/70 mb-4 space-y-2">
+                        <div class="flex items-center gap-2">
+                            <input type="text" id="commentAuthor" placeholder="작성자 (예: 1학년 이수학)" class="w-1/3 px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg outline-none focus:border-blue-500">
+                            <span class="text-[11px] text-slate-400">LaTeX 공식 사용 가능 ($...$)</span>
+                        </div>
+                        <div class="flex gap-2">
+                            <textarea id="commentText" rows="2" placeholder="의견, 질문, 문제 풀이 아이디어를 자유롭게 남겨주세요." class="flex-1 px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg outline-none focus:border-blue-500 resize-none"></textarea>
+                            <button onclick="submitComment()" class="px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg text-xs transition shrink-0">
+                                등록
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Comments List -->
+                    <div id="commentsList" class="space-y-3">
+                        <!-- Dynamic comments inserted here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-slate-800 text-white px-4 py-3 rounded-xl shadow-lg text-xs flex items-center gap-2.5 pointer-events-none">
+        <i class="fa-solid fa-circle-check text-emerald-400 text-sm" id="toastIcon"></i>
+        <span id="toastMessage">작업이 완료되었습니다.</span>
+    </div>
+
+    <!-- Application Script -->
+    <script>
+        // App Categories
+        const CATEGORIES = ["전체", "해석학/미적분", "기하/벡터", "확률과 통계", "수학사/탐구", "자유주제"];
+
+        // Category Badge Style Mapping
+        const CATEGORY_STYLES = {
+            "해석학/미적분": "bg-blue-100 text-blue-700 border-blue-200",
+            "기하/벡터": "bg-indigo-100 text-indigo-700 border-indigo-200",
+            "확률과 통계": "bg-purple-100 text-purple-700 border-purple-200",
+            "수학사/탐구": "bg-emerald-100 text-emerald-700 border-emerald-200",
+            "자유주제": "bg-amber-100 text-amber-700 border-amber-200"
+        };
+
+        // State variables
+        let posts = [];
+        let currentCategory = "전체";
+        let currentSearchQuery = "";
+        let selectedPostId = null;
+        let pendingImageData = null;
+
+        // Initialize App
+        window.addEventListener('DOMContentLoaded', () => {
+            loadPostsFromStorage();
+            renderCategoryFilters();
+            renderPosts();
+            updateStats();
+        });
+
+        // Load Posts from LocalStorage (Starts with Empty Array if non-existent)
+        function loadPostsFromStorage() {
+            const stored = localStorage.getItem('sigma_math_club_posts');
+            if (stored) {
+                try {
+                    posts = JSON.parse(stored);
+                } catch (e) {
+                    posts = [];
+                }
+            } else {
+                posts = [];
+                savePostsToStorage();
+            }
+        }
+
+        function savePostsToStorage() {
+            localStorage.setItem('sigma_math_club_posts', JSON.stringify(posts));
+            updateStats();
+        }
+
+        // Clear All Data with Confirmation
+        function clearAllData() {
+            if (posts.length === 0) {
+                showToast("삭제할 데이터가 없습니다.", "error");
+                return;
+            }
+            if (confirm("등록된 모든 게시글과 댓글 데이터를 완전히 삭제하시겠습니까?이 작업은 되돌릴 수 없습니다.")) {
+                posts = [];
+                savePostsToStorage();
+                renderPosts();
+                showToast("모든 데이터가 초기화되었습니다.");
+            }
+        }
+
+        function savePostsToStorage() {
+            localStorage.setItem('sigma_math_club_posts', JSON.stringify(posts));
+            updateStats();
+        }
+
+        // Render Category Filter Buttons
+        function renderCategoryFilters() {
+            const container = document.getElementById('categoryFilters');
+            container.innerHTML = CATEGORIES.map(cat => {
+                const isActive = currentCategory === cat;
+                const activeClass = isActive 
+                    ? 'bg-blue-600 text-white font-medium shadow-sm' 
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200 font-normal';
+                return `<button onclick="setCategory('${cat}')" class="px-3.5 py-1.5 rounded-xl text-xs whitespace-nowrap transition-all ${activeClass}">${cat}</button>`;
+            }).join('');
+        }
+
+        function setCategory(cat) {
+            currentCategory = cat;
+            renderCategoryFilters();
+            renderPosts();
+        }
+
+        function handleSearch() {
+            currentSearchQuery = document.getElementById('searchInput').value.trim().toLowerCase();
+            renderPosts();
+        }
+
+        // Update Dashboard Statistics
+        function updateStats() {
+            document.getElementById('statTotalPosts').innerText = posts.length;
+            document.getElementById('statMathPosts').innerText = posts.filter(p => p.category === '해석학/미적분' || p.category === '기하/벡터').length;
+            
+            const totalComments = posts.reduce((sum, p) => sum + (p.comments ? p.comments.length : 0), 0);
+            document.getElementById('statTotalComments').innerText = totalComments;
+
+            const totalLikes = posts.reduce((sum, p) => sum + (p.likes || 0), 0);
+            document.getElementById('statTotalLikes').innerText = totalLikes;
+        }
+
+        // Render Cards Matrix
+        function renderPosts() {
+            const grid = document.getElementById('postsGrid');
+            const emptyState = document.getElementById('emptyState');
+
+            // Filter posts
+            const filtered = posts.filter(post => {
+                const matchesCategory = (currentCategory === "전체") || (post.category === currentCategory);
+                const matchesSearch = !currentSearchQuery || 
+                    post.title.toLowerCase().includes(currentSearchQuery) ||
+                    post.author.toLowerCase().includes(currentSearchQuery) ||
+                    post.content.toLowerCase().includes(currentSearchQuery);
+                return matchesCategory && matchesSearch;
+            });
+
+            if (filtered.length === 0) {
+                grid.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                emptyState.classList.add('flex');
+                return;
+            } else {
+                emptyState.classList.add('hidden');
+                emptyState.classList.remove('flex');
+            }
+
+            grid.innerHTML = filtered.map(post => {
+                const badgeStyle = CATEGORY_STYLES[post.category] || "bg-slate-100 text-slate-700";
+                const commentCount = post.comments ? post.comments.length : 0;
+                
+                // Truncate text for grid preview
+                const contentSnippet = post.content.length > 140 ? post.content.substring(0, 140) + "..." : post.content;
+
+                return `
+                    <div onclick="openDetailModal('${post.id}')" class="post-card bg-white rounded-2xl border border-slate-200/80 overflow-hidden cursor-pointer flex flex-col justify-between">
+                        <div>
+                            ${post.image ? `
+                                <div class="w-full h-44 bg-slate-100 overflow-hidden relative">
+                                    <img src="${post.image}" alt="첨부사진" class="w-full h-full object-cover">
+                                </div>
+                            ` : ''}
+                            
+                            <div class="p-4">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${badgeStyle}">
+                                        ${post.category}
+                                    </span>
+                                    <span class="text-[11px] text-slate-400">${post.date.split(' ')[0]}</span>
+                                </div>
+
+                                <h3 class="font-bold text-slate-800 text-base mb-2 line-clamp-2 hover:text-blue-600 transition-colors">
+                                    ${escapeHtml(post.title)}
+                                </h3>
+
+                                <div class="math-content text-xs text-slate-600 leading-relaxed font-sans line-clamp-4 whitespace-pre-wrap">
+                                    ${escapeHtml(contentSnippet)}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="px-4 py-3 bg-slate-50/60 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                            <span class="font-medium text-slate-600 truncate max-w-[140px]">
+                                <i class="fa-regular fa-user mr-1 text-slate-400"></i>${escapeHtml(post.author)}
+                            </span>
+                            
+                            <div class="flex items-center gap-3 shrink-0">
+                                <span class="flex items-center gap-1 hover:text-rose-500">
+                                    <i class="fa-regular fa-heart text-rose-500"></i> ${post.likes || 0}
+                                </span>
+                                <span class="flex items-center gap-1">
+                                    <i class="fa-regular fa-comment text-blue-500"></i> ${commentCount}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Trigger KaTeX render on grid cards
+            renderMathInElement(grid, {
+                delimiters: [
+                    {left: '$$', right: '$$', display: true},
+                    {left: '$', right: '$', display: false}
+                ],
+                throwOnError: false
+            });
+        }
+
+        // Image Selection Helper
+        function handleImageSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (file.size > 5 * 1024 * 1024) {
+                showToast("이미지 용량은 5MB 이하만 첨부 가능합니다.", "error");
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                pendingImageData = e.target.result;
+                document.getElementById('imagePreview').src = pendingImageData;
+                document.getElementById('imagePreviewContainer').classList.remove('hidden');
+                document.getElementById('fileNameDisplay').innerText = file.name;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeSelectedImage() {
+            pendingImageData = null;
+            document.getElementById('postImageInput').value = '';
+            document.getElementById('imagePreviewContainer').classList.add('hidden');
+            document.getElementById('fileNameDisplay').innerText = '선택된 파일 없음';
+        }
+
+        // Modal Controls
+        function openPostModal() {
+            pendingImageData = null;
+            document.getElementById('postAuthor').value = '';
+            document.getElementById('postTitleInput').value = '';
+            document.getElementById('postContent').value = '';
+            document.getElementById('postImageInput').value = '';
+            document.getElementById('fileNameDisplay').innerText = '선택된 파일 없음';
+            document.getElementById('imagePreviewContainer').classList.add('hidden');
+
+            document.getElementById('postModal').classList.remove('hidden');
+        }
+
+        function closePostModal() {
+            document.getElementById('postModal').classList.add('hidden');
+        }
+
+        // Submit New Post
+        function submitPost() {
+            const category = document.getElementById('postCategory').value;
+            const author = document.getElementById('postAuthor').value.trim();
+            const title = document.getElementById('postTitleInput').value.trim();
+            const content = document.getElementById('postContent').value.trim();
+
+            if (!author || !title || !content) {
+                showToast("모든 필수 항목(작성자, 제목, 내용)을 입력해 주세요.", "error");
+                return;
+            }
+
+            const now = new Date();
+            const formattedDate = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+            const newPost = {
+                id: 'post-' + Date.now(),
+                category: category,
+                title: title,
+                author: author,
+                date: formattedDate,
+                content: content,
+                image: pendingImageData || null,
+                likes: 0,
+                comments: []
+            };
+
+            posts.unshift(newPost);
+            savePostsToStorage();
+            renderPosts();
+            closePostModal();
+            showToast("새 포스트가 성공적으로 올리졌습니다!");
+        }
+
+        // Open Detail View & Comments
+        function openDetailModal(postId) {
+            selectedPostId = postId;
+            const post = posts.find(p => p.id === postId);
+            if (!post) return;
+
+            // Fill Data
+            const catBadge = document.getElementById('detailCategory');
+            catBadge.innerText = post.category;
+            catBadge.className = `px-2.5 py-1 rounded-full text-xs font-semibold border ${CATEGORY_STYLES[post.category] || "bg-slate-100"}`;
+
+            document.getElementById('detailTitle').innerText = post.title;
+            document.getElementById('detailAuthor').innerText = post.author;
+            document.getElementById('detailDate').innerText = post.date;
+            
+            const detailContent = document.getElementById('detailContent');
+            detailContent.innerText = post.content;
+
+            // Image
+            const imgContainer = document.getElementById('detailImageContainer');
+            const imgEl = document.getElementById('detailImage');
+            if (post.image) {
+                imgEl.src = post.image;
+                imgContainer.classList.remove('hidden');
+            } else {
+                imgContainer.classList.add('hidden');
+            }
+
+            document.getElementById('detailLikeCount').innerText = post.likes || 0;
+            document.getElementById('detailCommentCount').innerText = post.comments ? post.comments.length : 0;
+
+            renderComments(post.comments || []);
+
+            document.getElementById('detailModal').classList.remove('hidden');
+
+            // Render Math Equations inside Detail View
+            renderMathInElement(document.getElementById('detailBody'), {
+                delimiters: [
+                    {left: '$$', right: '$$', display: true},
+                    {left: '$', right: '$', display: false}
+                ],
+                throwOnError: false
+            });
+        }
+
+        function closeDetailModal() {
+            selectedPostId = null;
+            document.getElementById('detailModal').classList.add('hidden');
+        }
+
+        // Render Comments inside Modal
+        function renderComments(comments) {
+            const list = document.getElementById('commentsList');
+            if (comments.length === 0) {
+                list.innerHTML = `<p class="text-xs text-slate-400 py-3 text-center">아직 등록된 댓글이 없습니다. 첫 의견을 남겨보세요!</p>`;
+                return;
+            }
+
+            list.innerHTML = comments.map(c => `
+                <div class="bg-slate-50/80 p-3 rounded-xl border border-slate-100 text-xs">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="font-bold text-slate-700">${escapeHtml(c.author)}</span>
+                        <span class="text-[10px] text-slate-400">${c.date}</span>
+                    </div>
+                    <p class="text-slate-600 font-sans leading-relaxed whitespace-pre-wrap">${escapeHtml(c.text)}</p>
+                </div>
+            `).join('');
+
+            // Render Math in comments
+            renderMathInElement(list, {
+                delimiters: [
+                    {left: '$$', right: '$$', display: true},
+                    {left: '$', right: '$', display: false}
+                ],
+                throwOnError: false
+            });
+        }
+
+        // Submit Comment
+        function submitComment() {
+            if (!selectedPostId) return;
+
+            const author = document.getElementById('commentAuthor').value.trim();
+            const text = document.getElementById('commentText').value.trim();
+
+            if (!author || !text) {
+                showToast("댓글 작성자와 내용을 입력해 주세요.", "error");
+                return;
+            }
+
+            const post = posts.find(p => p.id === selectedPostId);
+            if (!post) return;
+
+            if (!post.comments) post.comments = [];
+
+            const now = new Date();
+            const formattedDate = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+            post.comments.push({
+                id: 'c-' + Date.now(),
+                author: author,
+                date: formattedDate,
+                text: text
+            });
+
+            savePostsToStorage();
+            
+            document.getElementById('commentText').value = '';
+            document.getElementById('detailCommentCount').innerText = post.comments.length;
+            renderComments(post.comments);
+            renderPosts();
+            showToast("댓글이 등록되었습니다!");
+        }
+
+        // Toggle Like
+        function toggleLikeCurrentPost() {
+            if (!selectedPostId) return;
+            const post = posts.find(p => p.id === selectedPostId);
+            if (!post) return;
+
+            post.likes = (post.likes || 0) + 1;
+            document.getElementById('detailLikeCount').innerText = post.likes;
+            
+            savePostsToStorage();
+            renderPosts();
+        }
+
+        // Delete Post
+        function confirmDeletePost() {
+            if (!selectedPostId) return;
+            if (confirm("정말로 이 게시글을 삭제하시겠습니까?")) {
+                posts = posts.filter(p => p.id !== selectedPostId);
+                savePostsToStorage();
+                renderPosts();
+                closeDetailModal();
+                showToast("게시글이 삭제되었습니다.");
+            }
+        }
+
+        // SheetJS Export to Excel
+        function exportToExcel() {
+            if (posts.length === 0) {
+                showToast("내보낼 데이터가 없습니다.", "error");
+                return;
+            }
+
+            // Prepare Excel rows dataset
+            const excelData = posts.map((post, index) => {
+                const commentSummary = post.comments && post.comments.length > 0 
+                    ? post.comments.map(c => `[${c.author}] ${c.text}`).join(" | ")
+                    : "없음";
+
+                return {
+                    "번호": index + 1,
+                    "카테고리": post.category,
+                    "제목": post.title,
+                    "작성자": post.author,
+                    "작성일시": post.date,
+                    "내용 (수학식 포함)": post.content,
+                    "사진 첨부 여부": post.image ? "첨부됨 (이미지 포함)" : "없음",
+                    "좋아요(공감) 수": post.likes || 0,
+                    "댓글 수": post.comments ? post.comments.length : 0,
+                    "댓글 상세 내역": commentSummary
+                };
+            });
+
+            // Create Worksheet
+            const worksheet = XLSX.utils.json_to_sheet(excelData);
+
+            // Auto-fit column widths
+            const colWidths = [
+                { wch: 6 },  // 번호
+                { wch: 14 }, // 카테고리
+                { wch: 30 }, // 제목
+                { wch: 15 }, // 작성자
+                { wch: 18 }, // 작성일시
+                { wch: 50 }, // 내용
+                { wch: 14 }, // 사진 첨부 여부
+                { wch: 12 }, // 좋아요 수
+                { wch: 10 }, // 댓글 수
+                { wch: 40 }  // 댓글 상세
+            ];
+            worksheet['!cols'] = colWidths;
+
+            // Create Workbook & Append Sheet
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "수학동아리_아카이브");
+
+            // File Name with Today's Date
+            const today = new Date().toISOString().split('T')[0];
+            const fileName = `SIGMA_수학동아리_활동자료_${today}.xlsx`;
+
+            // Download File
+            XLSX.writeFile(workbook, fileName);
+
+            showToast("엑셀 파일이 정상적으로 다운로드되었습니다!");
+        }
+
+        // Utility: Toast Notification
+        function showToast(msg, type = "success") {
+            const toast = document.getElementById('toast');
+            const icon = document.getElementById('toastIcon');
+            const message = document.getElementById('toastMessage');
+
+            message.innerText = msg;
+            if (type === "error") {
+                icon.className = "fa-solid fa-circle-exclamation text-rose-400 text-sm";
+            } else {
+                icon.className = "fa-solid fa-circle-check text-emerald-400 text-sm";
+            }
+
+            toast.classList.remove('translate-y-20', 'opacity-0', 'pointer-events-none');
+            
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
+            }, 3000);
+        }
+
+        // Utility: HTML Escaper
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
